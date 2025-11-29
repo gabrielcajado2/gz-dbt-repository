@@ -1,10 +1,12 @@
 version: 2
 
 sources:
-  - name: gz_raw_data             # Nome que você dará à source no dbt
-    database: boreal-analyzer-475514-c2     # Opcional, depende do setup
-    schema: gz_raw_data   # OU 'gz_raw_data', se quiser fixo
+  - name: gz_raw_data
+    description: Dataset bruto da Greenweez com vendas, produtos e fretes.
+    database: boreal-analyzer-475514-c2
+    schema: gz_raw_data
     loader: bigquery
+
     freshness: 
       error_after:
         count: 2
@@ -12,10 +14,53 @@ sources:
       warn_after:
         count: 1
         period: day
+
     tables:
-      - name: raw_gz_sales
-        loaded_at_field: updated_at
+      # ----------------- PRODUCT -----------------
       - name: raw_gz_product
+        description: Tabela com o catálogo de produtos.
         loaded_at_field: updated_at
+        columns:
+          - name: products_id
+            description: ID único do produto (primary key da tabela product).
+            tests:
+              - not_null
+              - unique
+          - name: purchase_price
+            description: Preço de compra do produto.
+
+
+      # ----------------- SHIP --------------------
       - name: raw_gz_ship
+        description: Tabela com informações de envio/frete por pedido.
         loaded_at_field: updated_at
+        columns:
+          - name: orders_id
+            description: ID do pedido (primary key da tabela ship).
+            tests:
+              - not_null
+              - unique
+
+
+      # ----------------- SALES -------------------
+      - name: raw_gz_sales
+        description: Tabela de vendas, uma linha por combinação (pedido, produto).
+        loaded_at_field: updated_at
+        columns:
+          - name: orders_id
+            description: ID do pedido.
+            tests:
+              - not_null
+          - name: pdt_id
+            description: ID do produto dentro do pedido.
+            tests:
+              - not_null
+          - name: quantity
+            description: Quantidade vendida.
+          - name: revenue
+            description: Receita da linha de venda.
+
+        # teste da PK composta de sales (orders_id + pdt_id)
+        tests:
+          - dbt_utils.unique_combination_of_columns:
+              combination_of_columns: ['orders_id', 'pdt_id']
