@@ -1,0 +1,21 @@
+version: 2
+
+sources:
+  - name: gz_raw_data             # Nome que você dará à source no dbt
+    database: boreal-analyzer-475514-c2     # Opcional, depende do setup
+    schema: gz_raw_data   # OU 'gz_raw_data', se quiser fixo
+    loader: bigquery
+    freshness: 
+      error_after:
+        count: 2
+        period: day
+      warn_after:
+        count: 1
+        period: day
+    tables:
+      - name: raw_gz_sales
+        loaded_at_field: updated_at
+      - name: raw_gz_product
+        loaded_at_field: updated_at
+      - name: raw_gz_ship
+        loaded_at_field: updated_at
